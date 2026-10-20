@@ -2,7 +2,7 @@
   'use strict';
 
   // ================= 常量 =================
-  var STORAGE_KEY = 'jizhang-data-v1';
+  var STORAGE_KEY = 'jizhang-data-v2'; // v2：不再内置演示数据，首次打开为空账本
   var COLORS = ['#e85d5d', '#e8a33d', '#e8d33d', '#7fb545', '#3da5a5', '#3d8be8', '#7b5be8', '#d15be8', '#e85da0', '#9a9a9a'];
 
   var DEFAULT_CATEGORIES = {
@@ -35,7 +35,7 @@
   }
 
   // ================= 数据层 =================
-  function createDefaultState(seed) {
+  function createDefaultState() {
     var st = {
       version: 1,
       categories: { expense: [], income: [] },
@@ -50,7 +50,6 @@
     });
     DEFAULT_SOURCES.forEach(function (name) { st.sources.push({ id: uid(), name: name }); });
     DEFAULT_RECORDERS.forEach(function (name) { st.recorders.push({ id: uid(), name: name }); });
-    if (seed !== false) seedDemo(st);
     return st;
   }
 
@@ -133,7 +132,7 @@
         if (s && s.version === 1) return normalizeState(s);
       }
     } catch (e) { /* 忽略 */ }
-    return createDefaultState(true);
+    return createDefaultState();
   }
 
   function saveState() {
@@ -407,19 +406,19 @@
     var parts = [];
 
     parts.push('<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">');
-    parts.push('<line x1="' + PL + '" y1="' + baseY + '" x2="' + (W - PR) + '" y2="' + baseY + '" stroke="#2a3441" stroke-width="1"/>');
+    parts.push('<line x1="' + PL + '" y1="' + baseY + '" x2="' + (W - PR) + '" y2="' + baseY + '" style="stroke:var(--line)" stroke-width="1"/>');
 
     sums.forEach(function (s, i) {
       var cx = PL + step * i + step / 2;
       var hi = graphH * s.income / max;
       var he = graphH * s.expense / max;
 
-      parts.push('<rect x="' + (cx - barW - gap / 2).toFixed(2) + '" y="' + (baseY - hi).toFixed(2) + '" width="' + barW.toFixed(2) + '" height="' + hi.toFixed(2) + '" rx="1.5" fill="#4cc38a"/>');
-      parts.push('<rect x="' + (cx + gap / 2).toFixed(2) + '" y="' + (baseY - he).toFixed(2) + '" width="' + barW.toFixed(2) + '" height="' + he.toFixed(2) + '" rx="1.5" fill="#f0605d"/>');
+      parts.push('<rect x="' + (cx - barW - gap / 2).toFixed(2) + '" y="' + (baseY - hi).toFixed(2) + '" width="' + barW.toFixed(2) + '" height="' + hi.toFixed(2) + '" rx="1.5" style="fill:var(--green)"/>');
+      parts.push('<rect x="' + (cx + gap / 2).toFixed(2) + '" y="' + (baseY - he).toFixed(2) + '" width="' + barW.toFixed(2) + '" height="' + he.toFixed(2) + '" rx="1.5" style="fill:var(--red)"/>');
 
       var b = p.buckets[i];
       if (b.showLabel) {
-        parts.push('<text x="' + cx.toFixed(2) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="9" fill="#8b98a9">' + b.label + '</text>');
+        parts.push('<text x="' + cx.toFixed(2) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="9" style="fill:var(--dim)">' + b.label + '</text>');
       }
     });
 
@@ -792,7 +791,7 @@
 
   function clearAll() {
     if (!window.confirm('确定清空所有数据吗？此操作不可撤销。')) return;
-    state = createDefaultState(false);
+    state = createDefaultState();
     saveState();
     renderAll();
     toast('已清空所有数据');
@@ -1273,6 +1272,37 @@
     if (file) handleExcelImport(file);
     this.value = '';
   });
+
+  // ================= 主题（浅色 / 深色） =================
+  var THEME_KEY = 'jizhang-theme-v1';
+
+  function readTheme() {
+    try {
+      var t = localStorage.getItem(THEME_KEY);
+      if (t === 'dark' || t === 'light') return t;
+    } catch (e) { /* 忽略 */ }
+    return 'light';
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* 忽略 */ }
+    if (window.AndroidBridge && typeof window.AndroidBridge.setTheme === 'function') {
+      try { window.AndroidBridge.setTheme(theme); } catch (e) { /* 忽略 */ }
+    }
+    var btn = document.getElementById('themeToggle');
+    if (btn) {
+      btn.textContent = theme === 'light' ? '🌙' : '☀️';
+      btn.title = theme === 'light' ? '切换到深色' : '切换到浅色';
+    }
+  }
+
+  var currentTheme = readTheme();
+  document.getElementById('themeToggle').addEventListener('click', function () {
+    currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+    applyTheme(currentTheme);
+  });
+  applyTheme(currentTheme);
 
   // ================= 启动 =================
   saveState();

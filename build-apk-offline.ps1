@@ -84,8 +84,8 @@ Run-Step 'aapt2 link 生成 base.apk' {
         --manifest $tmpManifest `
         --min-sdk-version 21 `
         --target-sdk-version 34 `
-        --version-code 1 `
-        --version-name 1.0.0 `
+        --version-code 2 `
+        --version-name 1.1.0 `
         $resZip
 }
 
@@ -146,7 +146,7 @@ Run-Step 'apksigner 验证签名' {
 }
 
 # ---------- 10. 输出 ----------
-$finalApk = Join-Path $root 'jizhang-v1.0.0.apk'
+$finalApk = Join-Path $root 'jizhang-v1.1.0.apk'
 Copy-Item $signedApk $finalApk -Force
 Write-Host ""
 Write-Host "✅ 打包成功：$finalApk" -ForegroundColor Green

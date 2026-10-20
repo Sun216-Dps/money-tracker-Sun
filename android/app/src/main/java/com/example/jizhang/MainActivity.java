@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
+import android.view.View;
 import android.view.Window;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
@@ -39,12 +40,10 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Window window = getWindow();
-        window.setStatusBarColor(0xFF0D1117);
-        window.setNavigationBarColor(0xFF0D1117);
+        applySystemBars("light");
 
         webView = new WebView(this);
-        webView.setBackgroundColor(0xFF0D1117);
+        webView.setBackgroundColor(0xFFF5F7FA);
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -118,6 +117,39 @@ public class MainActivity extends Activity {
                 toast("保存失败：" + e.getMessage());
             }
         }
+
+        /** 供网页切换深浅色时同步系统状态栏/导航栏 */
+        @JavascriptInterface
+        public void setTheme(final String mode) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    applySystemBars(mode);
+                }
+            });
+        }
+    }
+
+    /** 设置状态栏 / 导航栏颜色与图标明暗（light / dark） */
+    private void applySystemBars(String mode) {
+        boolean light = !"dark".equals(mode);
+        int color = light ? 0xFFF5F7FA : 0xFF0D1117;
+
+        Window window = getWindow();
+        window.setStatusBarColor(color);
+        window.setNavigationBarColor(color);
+
+        View decor = window.getDecorView();
+        int flags = decor.getSystemUiVisibility();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (light) flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            else flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (light) flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            else flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        }
+        decor.setSystemUiVisibility(flags);
     }
 
     private void toast(final String msg) {
