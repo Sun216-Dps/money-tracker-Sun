@@ -35,7 +35,8 @@ $baseApk = Join-Path $build 'base.apk'
 $alignedApk = Join-Path $build 'aligned.apk'
 $signedApk = Join-Path $build 'app-debug.apk'
 $tmpManifest = Join-Path $build 'AndroidManifest.xml'
-$keystore = Join-Path $build 'debug.keystore'
+# 签名证书持久化（放项目根目录，跨构建复用，保证后续升级安装不冲突）
+$keystore = Join-Path $root 'debug.keystore'
 
 Write-Host "==> JDK      : $jbr" -ForegroundColor Cyan
 Write-Host "==> SDK      : $sdk" -ForegroundColor Cyan
@@ -85,7 +86,6 @@ Run-Step 'aapt2 link 生成 base.apk' {
         --target-sdk-version 34 `
         --version-code 1 `
         --version-name 1.0.0 `
-        -A $assetsDir `
         $resZip
 }
 
@@ -102,13 +102,20 @@ Run-Step 'd8 生成 classes.dex' {
     & (Join-Path $btDir.FullName 'd8.bat') --release --min-api 21 --output $dexDir @classFiles
 }
 
-# ---------- 7. 把 classes.dex 打进 APK ----------
-Write-Host "==> 将 classes.dex 写入 APK" -ForegroundColor Cyan
+# ---------- 7. 把网页资源与 classes.dex 打进 APK（强制正斜杠路径） ----------
+Write-Host "==> 写入 assets/www 与 classes.dex（正斜杠路径）" -ForegroundColor Cyan
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $dexFile = Join-Path $dexDir 'classes.dex'
 if (-not (Test-Path $dexFile)) { throw '未生成 classes.dex' }
-[System.IO.Compression.ZipFile]::Open($baseApk, 'Update').Dispose()
+
 $zip = [System.IO.Compression.ZipFile]::Open($baseApk, 'Update')
+# 清理可能已存在的反斜杠资源条目
+$zip.Entries | Where-Object { $_.FullName -like 'assets/*' } | ForEach-Object { $_.Delete() }
+# 逐个写入网页文件，路径统一用 /
+Get-ChildItem $www -File | ForEach-Object {
+    $entryName = 'assets/www/' + $_.Name
+    [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $_.FullName, $entryName) | Out-Null
+}
 [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $dexFile, 'classes.dex') | Out-Null
 $zip.Dispose()
 
