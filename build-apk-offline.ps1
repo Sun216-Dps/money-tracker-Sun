@@ -2,13 +2,43 @@
 # 直接用 Android SDK 的 aapt2 / javac / d8 / zipalign / apksigner 产出 debug APK
 # 用法： .\build-apk-offline.ps1
 
+param(
+    [string]$JdkPath = ''
+)
+
 $ErrorActionPreference = 'Stop'
 
 # ---------- 环境定位 ----------
 $root = $PSScriptRoot
-$jbr = 'D:\Android studio 2\jbr'
-if (-not (Test-Path "$jbr\bin\javac.exe")) {
-    Write-Host "❌ 未找到 Android Studio 自带 JDK：$jbr" -ForegroundColor Red
+
+# 自动查找 JDK（优先级：-JdkPath 参数 > JAVA_HOME > PATH 中的 javac > 常见 Android Studio 安装位置）
+function Resolve-Jdk {
+    if ($JdkPath) {
+        if (Test-Path "$JdkPath\bin\javac.exe") { return $JdkPath }
+        throw "指定的 JDK 路径无效：$JdkPath（应指向包含 bin\javac.exe 的目录）"
+    }
+    if ($env:JAVA_HOME -and (Test-Path "$env:JAVA_HOME\bin\javac.exe")) { return $env:JAVA_HOME }
+
+    $javacCmd = Get-Command javac -ErrorAction SilentlyContinue
+    if ($javacCmd) { return (Split-Path (Split-Path $javacCmd.Source -Parent) -Parent) }
+
+    $candidates = @(
+        'C:\Program Files\Android\Android Studio\jbr',
+        "$env:LOCALAPPDATA\Programs\Android Studio\jbr",
+        "$env:LOCALAPPDATA\Android\Android Studio\jbr"
+    )
+    foreach ($c in $candidates) {
+        if ($c -and (Test-Path "$c\bin\javac.exe")) { return $c }
+    }
+    return $null
+}
+
+$jbr = Resolve-Jdk
+if (-not $jbr) {
+    Write-Host "❌ 未找到 JDK（需要 17+）。请任选其一：" -ForegroundColor Red
+    Write-Host "   1) 安装 Android Studio（自带 JDK）或单独安装 JDK 17+" -ForegroundColor Yellow
+    Write-Host "   2) 设置环境变量 JAVA_HOME 指向 JDK 目录" -ForegroundColor Yellow
+    Write-Host "   3) 运行时传参： .\build-apk-offline.ps1 -JdkPath 'C:\Program Files\Android\Android Studio\jbr'" -ForegroundColor Yellow
     exit 1
 }
 

@@ -53,41 +53,6 @@
     return st;
   }
 
-  function seedDemo(state) {
-    var now = new Date();
-    function find(list, name) {
-      for (var i = 0; i < list.length; i++) if (list[i].name === name) return list[i];
-      return list[0];
-    }
-    function t(type, amount, catName, dayOffset, hour, minute, sourceName, recorderName, note) {
-      var cats = state.categories[type];
-      var d = new Date(now);
-      d.setDate(d.getDate() + dayOffset);
-      d.setHours(hour, minute, 0, 0);
-      state.transactions.push({
-        id: uid(),
-        type: type,
-        amount: amount,
-        categoryId: find(cats, catName).id,
-        sourceId: find(state.sources, sourceName).id,
-        recorderId: find(state.recorders, recorderName).id,
-        note: note || '',
-        dateTime: toLocalDateTime(d),
-        createdAt: Date.now()
-      });
-    }
-    t('income', 8500, '工资', -6, 9, 0, '银行卡', '我', '本月工资');
-    t('expense', 25.5, '餐饮', -1, 12, 30, '微信', '我', '午饭');
-    t('expense', 18, '交通', -1, 8, 10, '支付宝', '我', '地铁');
-    t('expense', 299, '购物', -2, 20, 15, '微信', '我', '日用品');
-    t('expense', 35, '餐饮', 0, 12, 0, '支付宝', '我', '午饭');
-    t('expense', 12, '通讯', -3, 10, 0, '微信', '我', '话费');
-    t('expense', 120, '居住', -10, 9, 0, '银行卡', '我', '水电费');
-    t('expense', 58, '娱乐', -5, 19, 30, '微信', '我', '电影');
-    t('income', 200, '红包', -4, 21, 0, '微信', '我', '红包');
-    t('expense', 45, '医疗', -8, 15, 0, '支付宝', '我', '药品');
-  }
-
   function normalizeState(s) {
     var st = {
       version: 1,
