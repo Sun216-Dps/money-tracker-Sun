@@ -1,0 +1,21 @@
+# 系统 / 编辑器
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/
+*.iml
+
+# 构建产物与生成文件
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/www/
+
+# 临时文件
+*.log
+_shot.png
+_preview.png
+_check*.js
+_sample.xlsx
