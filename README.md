@@ -20,16 +20,10 @@ money-tracker/
 ├── style.css         样式
 ├── app.js            业务逻辑（数据、渲染、增删改、统计、导入导出）
 ├── xlsx-lite.js      极简 xlsx 读写（ZIP + OOXML，自行实现）
-├── build-apk.ps1     一键打包 APK 脚本
+├── build-apk.ps1     一键打包 APK 脚本（Gradle 版）
+├── build-apk-offline.ps1  离线打包脚本（不依赖 Gradle）
 ├── BUILD.md          APK 打包指南
 └── android/          Android WebView 壳工程（Java，无第三方依赖）
-```
-
-## 网页版
-
-```powershell
-python -m http.server 8123
-# 浏览器打开 http://127.0.0.1:8123/
 ```
 
 ## 版本
@@ -39,4 +33,4 @@ python -m http.server 8123
 
 ## 说明
 
-编制数据/账目均为本机演示数据，可在「设置 → 清空所有数据」重置。
+数据保存在浏览器本地（localStorage），可在「设置 → 清空所有数据」重置。
